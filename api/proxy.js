@@ -2,39 +2,46 @@
 const fetch = require("node-fetch");
 
 module.exports = async (req, res) => {
-  // 设置 CORS 头，允许任何来源访问
+  // 1) 设置 CORS 头，允许自定义头部
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  // 这里多加了 read-token, Referer, User-Agent
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, read-token, Referer, User-Agent");
 
-  // 如果是预检请求(OPTIONS)，直接返回
+  // 2) 如果是预检请求(OPTIONS)，直接返回
   if (req.method === "OPTIONS") {
     return res.status(200).send("OK");
   }
 
-  // 从查询参数获取 walletAddress
+  // 3) 获取查询参数
   const { walletAddress } = req.query;
   if (!walletAddress) {
     return res.status(400).json({ error: "walletAddress is required" });
   }
 
-  // 目标 API URL
+  // 4) 构造目标 API URL
   const apiUrl = `https://api.definitive.fi/v1/public/airdrop/eligibility?walletAddress=${walletAddress}`;
 
   try {
-    // 发起请求到目标服务器
+    // 5) 从请求头里读取
+    //    如果你想固定使用某个 token, 可以直接写死
+    const readToken = req.headers["read-token"] || "c8725aac-6f23-4454-9367-78358a4055f1";
+    const referer = req.headers["referer"] || "https://app.definitive.fi/";
+    const userAgent = req.headers["user-agent"] || "Mozilla/5.0 (Windows NT 10.0; Win64; x64)";
+
+    // 6) 发起请求到目标服务器
     const response = await fetch(apiUrl, {
       headers: {
-        "read-token": "c8725aac-6f23-4454-9367-78358a4055f1",
-        "Referer": "https://app.definitive.fi/",
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64)"
+        "read-token": readToken,
+        "Referer": referer,
+        "User-Agent": userAgent
       }
     });
 
-    // 解析响应
+    // 7) 解析响应
     const data = await response.json();
 
-    // 返回给前端
+    // 8) 返回给前端
     return res.status(200).json(data);
 
   } catch (error) {
