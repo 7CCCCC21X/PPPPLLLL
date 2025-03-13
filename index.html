@@ -65,24 +65,14 @@
       detailCell.innerText = "";
 
       try {
-        // 3.1 组装请求URL和请求头
-        const apiUrl = `https://api.definitive.fi/v1/public/airdrop/eligibility?walletAddress=${address}`;
-        
-        // 若需要 CORS 代理，可尝试：
-        // let corsProxyUrl = `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`;
-        // fetch(corsProxyUrl, { ... })
+        // 3.1 拼接你的 Vercel 后端代理地址
+        //    将 YOUR_VERCEL_DOMAIN 替换成你自己的域名，例如 "my-vercel-proxy.vercel.app"
+        const proxyUrl = `https://YOUR_VERCEL_DOMAIN/api/proxy?walletAddress=${address}`;
 
-        // 不使用代理，直接请求
-        const response = await fetch(apiUrl, {
-          method: "GET",
-          headers: {
-            "read-token": "c8725aac-6f23-4454-9367-78358a4055f1",
-            "Referer": "https://app.definitive.fi/",
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
-          }
-        });
+        // 3.2 发起请求
+        const response = await fetch(proxyUrl, { method: "GET" });
 
-        // 3.2 解析结果
+        // 3.3 解析结果
         if (!response.ok) {
           // 如果状态码不是 200
           statusCell.innerText = `请求失败: ${response.status}`;
@@ -100,7 +90,7 @@
         }
 
       } catch (error) {
-        // 3.3 请求异常
+        // 3.4 请求异常
         statusCell.innerText = "请求异常";
         row.classList.add("failure");
         detailCell.innerText = error.toString();
