@@ -11,8 +11,14 @@
     table { width: 100%; border-collapse: collapse; margin-top: 20px; }
     th, td { padding: 8px; border: 1px solid #ccc; text-align: left; }
     th { background: #4CAF50; color: white; }
-    .success { background-color: #d4edda; }
-    .failure { background-color: #f8d7da; }
+    /* 绿色背景：有资格 */
+    .success {
+      background-color: #d4edda;
+    }
+    /* 红色背景：没资格 */
+    .failure {
+      background-color: #f8d7da;
+    }
   </style>
 </head>
 <body>
@@ -33,7 +39,7 @@
   <thead>
     <tr>
       <th>钱包地址</th>
-      <th>请求结果</th>
+      <th>有资格 / 没资格</th>
       <th>详情</th>
     </tr>
   </thead>
@@ -54,13 +60,15 @@
     for (const address of addresses) {
       // 创建一行用于显示结果
       const row = tableBody.insertRow();
-      row.insertCell(0).innerText = address;  // 第1列：钱包地址
+      // 第1列：钱包地址
+      const addrCell = row.insertCell(0);
+      addrCell.innerText = address;
 
-      // 第2列：查询状态
+      // 第2列：是否有资格
       const statusCell = row.insertCell(1);
       statusCell.innerText = "查询中...";
 
-      // 第3列：详情
+      // 第3列：返回的详情
       const detailCell = row.insertCell(2);
       detailCell.innerText = "";
 
@@ -79,13 +87,19 @@
           row.classList.add("failure");
           detailCell.innerText = await response.text();
         } else {
-          // 状态码 200，成功获取数据
+          // 成功获取数据
           const data = await response.json();
-          statusCell.innerText = "成功";
-          row.classList.add("success");
 
-          // 这里简要显示 data 中的部分字段
-          // 例如 eligible, preRegistered, authStep 等
+          // 根据 data.eligible 判断“有资格”或“没资格”
+          if (data.eligible === true) {
+            statusCell.innerText = "有资格";
+            row.classList.add("success");
+          } else {
+            statusCell.innerText = "没资格";
+            row.classList.add("failure");
+          }
+
+          // 详情显示完整 JSON（可按需调整）
           detailCell.innerText = JSON.stringify(data);
         }
 
