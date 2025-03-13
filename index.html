@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <title>批量查询空投资格</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f7f7f7; }
+    h2 { text-align: center; }
+    #wallets { width: 100%; height: 150px; font-size: 14px; }
+    button { margin: 10px 0; padding: 8px 16px; font-size: 14px; cursor: pointer; }
+    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+    th, td { padding: 8px; border: 1px solid #ccc; text-align: left; }
+    th { background: #4CAF50; color: white; }
+    .success { background-color: #d4edda; }
+    .failure { background-color: #f8d7da; }
+  </style>
+</head>
+<body>
+
+<h2>批量查询空投资格</h2>
+
+<!-- 输入多个钱包地址，每行一个 -->
+<textarea id="wallets" placeholder="0x6c1ada42600152FF44bB898B621c12A78c0f893a
+0xAee02FcF9A7A838b797153bd7494C023fC5d1f44
+0x7dc356Bf45b9189Af07a80FCBb93C1bE6Ac64DcC
+..."></textarea>
+
+<br>
+<button onclick="batchQuery()">开始查询</button>
+
+<!-- 显示结果的表格 -->
+<table id="resultTable">
+  <thead>
+    <tr>
+      <th>钱包地址</th>
+      <th>请求结果</th>
+      <th>详情</th>
+    </tr>
+  </thead>
+  <tbody></tbody>
+</table>
+
+<script>
+  async function batchQuery() {
+    // 1. 读取用户输入的多个钱包地址
+    const textarea = document.getElementById("wallets");
+    const addresses = textarea.value.trim().split("\n").map(addr => addr.trim()).filter(Boolean);
+
+    // 2. 清空之前的查询结果
+    const tableBody = document.querySelector("#resultTable tbody");
+    tableBody.innerHTML = "";
+
+    // 3. 逐个查询
+    for (const address of addresses) {
+      // 创建一行用于显示结果
+      const row = tableBody.insertRow();
+      row.insertCell(0).innerText = address;  // 第1列：钱包地址
+
+      // 第2列：查询状态
+      const statusCell = row.insertCell(1);
+      statusCell.innerText = "查询中...";
+
+      // 第3列：详情
+      const detailCell = row.insertCell(2);
+      detailCell.innerText = "";
+
+      try {
+        // 3.1 组装请求URL和请求头
+        const apiUrl = `https://api.definitive.fi/v1/public/airdrop/eligibility?walletAddress=${address}`;
+        
+        // 若需要 CORS 代理，可尝试：
+        // let corsProxyUrl = `https://corsproxy.io/?${encodeURIComponent(apiUrl)}`;
+        // fetch(corsProxyUrl, { ... })
+
+        // 不使用代理，直接请求
+        const response = await fetch(apiUrl, {
+          method: "GET",
+          headers: {
+            "read-token": "c8725aac-6f23-4454-9367-78358a4055f1",
+            "Referer": "https://app.definitive.fi/",
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
+          }
+        });
+
+        // 3.2 解析结果
+        if (!response.ok) {
+          // 如果状态码不是 200
+          statusCell.innerText = `请求失败: ${response.status}`;
+          row.classList.add("failure");
+          detailCell.innerText = await response.text();
+        } else {
+          // 状态码 200，成功获取数据
+          const data = await response.json();
+          statusCell.innerText = "成功";
+          row.classList.add("success");
+
+          // 这里简要显示 data 中的部分字段
+          // 例如 eligible, preRegistered, authStep 等
+          detailCell.innerText = JSON.stringify(data);
+        }
+
+      } catch (error) {
+        // 3.3 请求异常
+        statusCell.innerText = "请求异常";
+        row.classList.add("failure");
+        detailCell.innerText = error.toString();
+      }
+    }
+  }
+</script>
+
+</body>
+</html>
